@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c1222" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ChatKeep" />
+  <title>ChatKeep</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <style>
+    :root {
+      --bg: #0c1222;
+      --bg2: #141c2f;
+      --card: #1a243a;
+      --line: rgba(255,255,255,.08);
+      --text: #f4f7fb;
+      --muted: #93a0b8;
+      --accent: #6ea8ff;
+      --me: #2b6dff;
+      --them: #243049;
+      --danger: #ff6b7a;
+      --ok: #3dd68c;
+      --radius: 18px;
+      --safe-top: env(safe-area-inset-top);
+      --safe-bot: env(safe-area-inset-bottom);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; }
+    body { display: flex; flex-direction: column; overflow: hidden; }
+    button, input { font: inherit; }
+    .top {
+      padding: calc(12px + var(--safe-top)) 16px 12px;
+      background: linear-gradient(180deg, #121a2e, #0c1222);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; flex: 1; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 12px;
+      background: linear-gradient(145deg, #6ea8ff, #3b6dff);
+      display: grid; place-items: center; font-weight: 800; color: #fff;
+    }
+    .brand h1 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    .icon-btn {
+      width: 40px; height: 40px; border: 0; border-radius: 12px;
+      background: var(--card); color: var(--text); cursor: pointer;
+    }
+    .search-wrap { padding: 10px 16px; }
+    .search {
+      width: 100%; border: 0; border-radius: 14px; padding: 12px 14px;
+      background: var(--card); color: var(--text); outline: none;
+    }
+    .list { flex: 1; overflow: auto; padding: 0 10px calc(88px + var(--safe-bot)); }
+    .row {
+      display: flex; gap: 12px; align-items: center;
+      padding: 12px; border-radius: 16px; cursor: pointer;
+    }
+    .row:active { background: var(--card); }
+    .avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      display: grid; place-items: center; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .row .meta { flex: 1; min-width: 0; }
+    .row .name { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .preview { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+    .empty { text-align: center; color: var(--muted); padding: 48px 24px; }
+    .fab {
+      position: fixed; right: 18px; bottom: calc(22px + var(--safe-bot));
+      height: 56px; padding: 0 20px; border: 0; border-radius: 28px;
+      background: linear-gradient(145deg, #6ea8ff, #3b6dff); color: #fff;
+      font-weight: 700; box-shadow: 0 10px 28px rgba(59,109,255,.35); cursor: pointer;
+    }
+    .screen { position: absolute; inset: 0; background: var(--bg); display: none; flex-direction: column; }
+    .screen.on { display: flex; }
+    .chat-head {
+      padding: calc(10px + var(--safe-top)) 10px 10px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--line); background: #121a2e;
+    }
+    .back { width: 40px; height: 40px; border: 0; background: transparent; color: var(--accent); font-size: 22px; cursor: pointer; }
+    .thread { flex: 1; overflow: auto; padding: 14px 12px calc(16px + var(--safe-bot)); }
+    .bubble {
+      max-width: 82%; padding: 10px 12px; border-radius: 16px; margin: 6px 0;
+      font-size: 15px; line-height: 1.35; white-space: pre-wrap; word-break: break-word;
+    }
+    .bubble.them { background: var(--them); border-bottom-left-radius: 6px; }
+    .bubble.me { background: var(--me); margin-left: auto; border-bottom-right-radius: 6px; }
+    .who { font-size: 11px; opacity: .75; margin-bottom: 4px; }
+    .time { font-size: 10px; opacity: .6; margin-top: 6px; text-align: right; }
+    .sheet {
+      position: absolute; inset: 0; background: rgba(0,0,0,.5); display: none;
+      align-items: flex-end;
+    }
+    .sheet.on { display: flex; }
+    .panel {
+      width: 100%; background: var(--bg2); border-radius: 22px 22px 0 0;
+      padding: 16px 16px calc(20px + var(--safe-bot));
+    }
+    .panel h2 { margin: 4px 0 10px; font-size: 20px; }
+    .panel ol { color: var(--muted); padding-left: 18px; }
+    .panel li { margin: 8px 0; }
+    .primary {
+      width: 100%; margin-top: 14px; border: 0; border-radius: 14px; padding: 14px;
+      background: var(--accent); color: #081018; font-weight: 800; cursor: pointer;
+    }
+    .ghost {
+      width: 100%; margin-top: 8px; border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px; background: transparent; color: var(--text); cursor: pointer;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">CK</div>
+      <div>
+        <h1>ChatKeep</h1>
+        <p>Private chat backup</p>
+      </div>
+    </div>
+    <button class="icon-btn" id="helpBtn" aria-label="How to use">?</button>
+  </header>
+  <div class="search-wrap">
+    <input class="search" id="search" placeholder="Search chats" />
+  </div>
+  <div class="list" id="list"></div>
+  <button class="fab" id="importBtn">Import chat</button>
+
+  <section class="screen" id="chatScreen">
+    <div class="chat-head">
+      <button class="back" id="backBtn">‹</button>
+      <div class="avatar" id="chatAvatar"></div>
+      <div>
+        <div id="chatTitle" style="font-weight:700"></div>
+        <div id="chatSub" style="color:var(--muted);font-size:12px"></div>
+      </div>
+    </div>
+    <div class="thread" id="thread"></div>
+  </section>
+
+  <div class="sheet" id="sheet">
+    <div class="panel">
+      <h2>Keep a copy before you delete</h2>
+      <ol>
+        <li>Open WhatsApp on this phone.</li>
+        <li>Open the chat you want to keep.</li>
+        <li>Tap the contact or group name (iPhone) or the ⋮ menu (Android).</li>
+        <li>Choose <b>Export chat</b>. Use Without media for a faster file.</li>
+        <li>Share or Save the file, then tap <b>Choose export file</b> below.</li>
+        <li>You can delete the chat in WhatsApp. ChatKeep keeps your copy on this phone.</li>
+      </ol>
+      <button class="primary" id="chooseBtn">Choose export file</button>
+      <button class="ghost" id="closeSheet">Not now</button>
+    </div>
+  </div>
+  <input class="hidden" id="file" type="file" accept=".txt,.zip,text/plain,application/zip" multiple />
+
+  <script src="app.js"></script>
+</body>
+</html>
